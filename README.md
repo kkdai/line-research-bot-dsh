@@ -23,6 +23,39 @@ You (LINE):  第 2 章再深一點，加日文來源
 Bot:         [Flex card v2]  same URL, content updated, old version snapshotted
 ```
 
+## 工作紀錄（2026-11-03）
+
+這個 repo 的目標：沿用 `line-research-bot-go` 的 LINE Bot 功能與 Cloud Run 設定，
+把 agent 框架從 ADK 換成 dsh-superagent 所用的 DeepSeek Harness。
+
+**1. 研究 dsh-superagent**
+- 它是 DeepSeek Harness 的 bundle，本質是 **GitHub coding agent**：單一長駐程序、
+  SQLite 狀態、只聽 `127.0.0.1`、強制需要 GitHub repo 與帳號、模型層只支援 Anthropic Messages 協定。
+- 整包 fork 上 Cloud Run 需要拿掉 GitHub 依賴、開放 webhook、固定一台常駐 instance
+  並掛 Filestore，等於放棄 scale-to-zero，因此沒有採用。
+
+**2. 採用方案：保留 Cloud Run 架構，只把 agent 層換成 DeepSeek Harness**
+- LINE webhook、意圖判斷、Flex 卡片、Firestore、GCS 報告、Cloud Tasks、深化與重試流程
+  全部 1:1 從 Go 移植成 TypeScript（Node 24 直接執行 `.ts`，不需 build）。
+- 三個研究階段（規劃 → 搜尋比對 → 撰寫）各跑一個 DSH session，
+  透過 `@deepseek-ai/dsh-sdk-client` 驅動 `dsh` runtime 子程序。
+- 模型仍是 **Vertex AI 上的 Gemini**：Cloud Run 裡多一個 LiteLLM sidecar，
+  把 DSH 的 Anthropic Messages 請求轉給 Gemini。
+- Google Search grounding 做成 DSH 外掛工具 `web_research`（直接呼叫 Gemini + Google Search），
+  結構化輸出改用 `submit_plan` / `submit_sources` / `submit_report` 工具。
+- DSH 的 shell、檔案編輯工具全部關閉，agent 只拿得到研究用的工具。
+
+**3. 驗證**
+- 先做 PoC，確認 DSH → LiteLLM → Gemini 與自訂工具都能動。
+- 52 個單元測試（Node 24 / 26）通過。
+- 用真 Gemini 跑完整整合測試（規劃 → 搜尋 → 撰寫 → 深化找不到章節）通過，約 7.5 分鐘。
+- 過程中修掉的坑：SDK rc.5 參數改名（`launch` 會被忽略）、DSH 從 `$DSH_HOME` 解析外掛
+  （改成啟動時寫入絕對路徑）、DSH 子程序不再繼承 LINE secrets。細節見 [`docs/design.md`](docs/design.md)。
+
+**4. 狀態**
+- ✅ 程式碼、測試、部署腳本（`deploy/`）完成。
+- ⏳ **尚未部署到 Cloud Run**，Docker image 也還沒實際 build 過。部署步驟見 [`deploy/README.md`](deploy/README.md)。
+
 ## Architecture
 
 ```
