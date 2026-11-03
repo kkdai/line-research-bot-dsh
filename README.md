@@ -54,7 +54,10 @@ Bot:         [Flex card v2]  same URL, content updated, old version snapshotted
 
 **4. 狀態**
 - ✅ 程式碼、測試、部署腳本（`deploy/`）完成。
-- ⏳ **尚未部署到 Cloud Run**，Docker image 也還沒實際 build 過。部署步驟見 [`deploy/README.md`](deploy/README.md)。
+- ✅ 已部署到 Cloud Run（`line-vertex` / `asia-east1`）：`line-research-bot-dsh`，
+  沿用原 `line-research-bot` 的 SA、bucket `research-line`、queue `research-jobs`、LINE secrets 與 Firestore collections。
+- ⏳ LINE webhook 仍指向 Go 版；切換時把 webhook 改成 `新服務的 `/webhook``。
+  部署步驟見 [`deploy/README.md`](deploy/README.md)。
 
 ## Architecture
 
