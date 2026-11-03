@@ -1,0 +1,32 @@
+# Overlay applied on top of DeepSeek Harness's `sdk-minimal` profile
+# (passed with `--patch` by src/research/agents.ts).
+#
+# - The chat model goes through the Anthropic Messages-compatible endpoint of
+#   the LiteLLM sidecar, which forwards to Gemini on Vertex AI. The endpoint
+#   and key come from DEEPSEEK_BASE_URL / DEEPSEEK_API_KEY in the launch env.
+# - Shell and file-editing tools are removed: the research agent only gets
+#   read_image plus the tools from ./plugin (web_research, submit_*).
+# - The persona comes from DSH_SYSTEM_PROMPT (set per stage by the host).
+
+- id: llm-deepseek
+  config:
+    thinking: disabled
+    defaultContextWindow: 1000000
+    streamIdleTimeoutMs: 300000
+
+- id: persistent-bash
+  disabled: true
+- id: terminal-bash
+  disabled: true
+- id: str-replace-editor
+  disabled: true
+- id: tool-working-directory
+  disabled: true
+
+# DSH resolves bare plugin names from $DSH_HOME/profiles/<profile>/, which
+# is outside this app (e.g. /tmp on Cloud Run), and validates `name` before
+# evaluating `!!js`. So the host renders this file into DSH_HOME with
+# {{PLUGIN_URL}} replaced by the plugin's absolute file URL.
+- insert:
+    - id: line-research-tools
+      name: '{{PLUGIN_URL}}'

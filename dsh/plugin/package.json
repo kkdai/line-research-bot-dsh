@@ -1,0 +1,11 @@
+{
+  "name": "line-research-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepSeek Harness plugin: Gemini-grounded web_research plus the submit_* tools that carry each research stage's structured result back to the host.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  }
+}
